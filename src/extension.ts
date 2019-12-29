@@ -8,7 +8,18 @@ export function activate(context: vscode.ExtensionContext) {
 	if (rootPath) {
 		let configPath = glob.sync(rootPath + '/**/.packhouse.json', { ignore: "**/node_modules/**" })[0]
 		let system = new Main(configPath)
+		let inputChars = ['.', '(']
+		let keyIn = {
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				return system.inputKey(document, position)
+			}
+		}
+		let TS = vscode.languages.registerCompletionItemProvider({ scheme: 'file', language: 'typescript' }, keyIn, ...inputChars)
+		let JS = vscode.languages.registerCompletionItemProvider({ scheme: 'file', language: 'javascript' }, keyIn, ...inputChars)
+		context.subscriptions.push(TS)
+		context.subscriptions.push(JS)
 		vscode.window.onDidChangeActiveTextEditor(() => system.update())
+		console.log('packhouse done')
 	}
 }
 

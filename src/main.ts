@@ -1,4 +1,4 @@
-import utils from './utils'
+import loader from './loader'
 import * as vscode from 'vscode'
 
 interface Item {
@@ -62,7 +62,8 @@ class Main {
 
     }
 
-    getCallTarget() {
+    getCallTarget(text: string, line: number) {
+        let target = loader(text, line)
         return {
             name: 'aws@dynanodb/get',
             pack: [],
@@ -76,23 +77,34 @@ class Main {
     exportHelp(document: vscode.TextDocument, position: vscode.Position): vscode.SignatureHelp | null {
         this.initContext(document, position)
         this.help = null
-        this.perfix('.action()', () => {
-            this.setHelp('action', `# ouo`)
+        this.perfix(['.promise(', '.action('], () => {
+            let target = this.getCallTarget(document.getText(), position.line)
+            if (target) {
+                this.setHelp('action', `# ouo`)
+            }
         })
         return this.help
     }
 
     exportInputKey(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
         this.initContext(document, position)
-        this.perfix('.tool()', () => this.add(this.tools))
+        this.perfix('.tool(', () => this.add(this.tools))
         return this.items
     }
 
-    perfix(key: string, callback: () => void) {
+    perfix(key: string | Array<string>, callback: () => void) {
         let position = this.position ? this.position.character : 0
-        if (this.lineText.slice(position - key.length, position) === key) {
-			callback()
-		}
+        if (Array.isArray(key)) {
+            for (let text of key) {
+                if (this.lineText.slice(position - text.length, position) === text) {
+                    callback()
+                }
+            }
+        } else {
+            if (this.lineText.slice(position - key.length, position) === key) {
+                callback()
+            }
+        }
     }
 
     add(items: Array<Item>) {

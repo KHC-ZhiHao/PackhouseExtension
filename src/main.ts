@@ -11,9 +11,12 @@ interface Item {
 class Main {
 
     public data: any = {}
+    public help: vscode.SignatureHelp | null = null
     public tools: Array<Item> = []
     public items: Array<vscode.CompletionItem> = []
     public lineText: string = ''
+    public position: vscode.Position | null = null
+    public document: vscode.TextDocument | null = null
     public configPath: string
 
     constructor(configPath: any) {
@@ -24,8 +27,16 @@ class Main {
 
     init() {
         this.data = {}
+        this.help = null
         this.items = []
         this.lineText = ''
+    }
+
+    initContext(document: vscode.TextDocument, position: vscode.Position) {
+        this.init()
+        this.document = document
+        this.lineText = document.lineAt(position.line).text
+        this.position = position
     }
 
     update() {
@@ -53,29 +64,35 @@ class Main {
 
     getCallTarget() {
         return {
-            name: '',
+            name: 'aws@dynanodb/get',
+            pack: [],
             type: 'tool',
-            method: 'action'
+            method: 'action',
+            hasNoGood: false,
+            hasAlways: false
         }
     }
 
-    isNoGood() {
-
+    exportHelp(document: vscode.TextDocument, position: vscode.Position): vscode.SignatureHelp | null {
+        this.initContext(document, position)
+        this.help = null
+        this.perfix('.action()', () => {
+            this.setHelp('action', `# ouo`)
+        })
+        return this.help
     }
 
-    inputKey(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
-        this.init()
-        this.lineText = document.lineAt(position.line).text
+    exportInputKey(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
+        this.initContext(document, position)
         this.perfix('.tool()', () => this.add(this.tools))
-        this.perfix('.action()', () => this.add(this.tools))
-        this.perfix('.promise()', () => this.add(this.tools))
         return this.items
     }
 
     perfix(key: string, callback: () => void) {
-        if (this.lineText.slice(-(key.length)) === key) {
-            callback()
-        }
+        let position = this.position ? this.position.character : 0
+        if (this.lineText.slice(position - key.length, position) === key) {
+			callback()
+		}
     }
 
     add(items: Array<Item>) {
@@ -88,8 +105,9 @@ class Main {
         }
     }
 
-    hover() {
-
+    setHelp(label: string, documentation?: string) {
+        this.help = new vscode.SignatureHelp()
+        this.help.signatures = [new vscode.SignatureInformation(label, new vscode.MarkdownString(documentation))]
     }
 }
 

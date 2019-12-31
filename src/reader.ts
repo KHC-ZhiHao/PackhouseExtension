@@ -1,63 +1,101 @@
 import * as ts from 'typescript'
-import * as vscode from 'vscode'
-
-import Config from './config'
 
 function getSource(document: string): ts.SourceFile {
-    return ts.createSourceFile('AST.ts', document, ts.ScriptTarget.ES2020)
+    return ts.createSourceFile('AST.ts', document, ts.ScriptTarget.ES2020, true)
 }
 
-function deepEachChild(nodes: Array<ts.Node>) {
-
-}
-
-export function handlerFile(config: Config, document: vscode.TextDocument, line: number): any {
-
-}
-
-export function packhouseFile(config: Config, document: vscode.TextDocument, line: number): any {
-    let source = getSource(document.getText())
-    let index = 0
-    source.forEachChild((child) => {
-        try {
-            let line = source.getLineAndCharacterOfPosition(child.pos)
-            console.log(index, ':', line)
-            index += 1
-        } catch (error) {
-            console.log(error)
+function findNode(nowLine: number, source: ts.SourceFile, nodes: Array<ts.Node>): ts.Node | null {
+    for (let i = 0; i < nodes.length; i++) {
+        let node = nodes[i]
+        let line = source.getLineAndCharacterOfPosition(node.pos).line
+        let endLine = source.getLineAndCharacterOfPosition(node.end).line
+        if (line < nowLine && nowLine < endLine) {
+            let children = node.getChildren()
+            if (children.length === 0) {
+                return node
+            } else {
+                return findNode(nowLine, source, children) || node
+            }
         }
-    })
-    // let inType: string | null = null 
-    // let inWhere: string | null = null
-    // let inCaller: string | null = null
-    // while (line >= 0) {
-    //     let text = document.lineAt(line).text.replace(/\s/g, '')
-    //     if (inCaller == null) {
+    }
+    return null
+}
 
-    //     }
-    //     if (inWhere == null) {
-    //         if (text.match(/install:|install\(/)) {
-    //             inWhere = 'install'
-    //         }
-    //         if (text.match(/handler:|handler\(/)) {
-    //             inWhere = 'handler'
-    //         }
-    //     }
-    //     if (inType == null) {
-    //         if (text.match(/tools:/)) {
-    //             inType = 'tool'
-    //         }
-    //         if (text.match(/lines:/)) {
-    //             inType = 'line'
-    //         }
-    //     }
-    //     line -= 1
-    //     if (inType) {
-    //         break
-    //     }
-    // }
-    // return {
-    //     inType,
-    //     inWhere
-    // }
+function getDocNode(document: string, line: number) {
+    let source = getSource(document)
+    return findNode(line, source, source.getChildren())
+}
+
+function getPropertyName(text: string): string | null {
+    text = text.trim().split('\n')[0].trim()
+    if (text[0] === '{' || text[0] === '[') {
+        return null
+    }
+    let name = text.split(/:|\(/)[0]
+    if (name[0] === `"` || name[0] === `'`) {
+        return name.slice(1, -1)
+    }
+    return name
+}
+
+function getPropertyNameMatch(node: ts.Node, target: Array<string>): string | null {
+    let property = getPropertyName(node.getText())
+    if (target.includes(property || '')) {
+        return property
+    } else if (node.parent) {
+        return getPropertyNameMatch(node.parent, target)
+    } else {
+        return null
+    }
+}
+
+export class GroupFile {
+    public node: ts.Node | null = null
+    public types: Array<string> = ['tools', 'lines']
+    public actions: Array<string> = ['install', 'handler']
+    constructor(document: string, line: number) {
+        this.node = getDocNode(document, line)
+    }
+
+    getUser(node?: ts.Node): string | null {
+        if (this.node) {
+            if (node == null) {
+                node = this.node
+            }
+            let property = getPropertyName(node.getText())
+            if (this.actions.includes(property || '')) {
+                return getPropertyName(node.parent.parent.getText())
+            }
+            if (node.parent) {
+                return this.getUser(node.parent)
+            }
+        }
+        return null
+    }
+
+    getType(node?: ts.Node): string | null {
+        if (this.node) {
+            if (node == null) {
+                node = this.node
+            }
+            let property = getPropertyName(node.getText()) || ''
+            if (property.match('tools')) {
+                return 'tool'
+            }
+            if (property.match('lines')) {
+                return 'line'
+            }
+            if (node.parent) {
+                return this.getType(node.parent)
+            }
+        }
+        return null
+    }
+
+    getAction(): string | null {
+        if (this.node) {
+            return getPropertyNameMatch(this.node, this.actions)
+        }
+        return null
+    }
 }

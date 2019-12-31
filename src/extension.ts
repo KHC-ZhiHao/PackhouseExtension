@@ -18,7 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
 		let JS = vscode.languages.registerCompletionItemProvider({ scheme: 'file', language: 'javascript' }, keyIn, ...inputChars)
 		context.subscriptions.push(TS)
 		context.subscriptions.push(JS)
-		vscode.window.onDidChangeActiveTextEditor(() => main.updatePage())
+		vscode.window.onDidChangeActiveTextEditor((ddd) => {
+			console.log(ddd)
+			main.updatePage()
+		})
 		console.log('packhouse done')
 	}
 }

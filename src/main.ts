@@ -2,9 +2,9 @@ import * as fs from 'fs'
 import * as vscode from 'vscode'
 
 import * as utils from './utils'
-import * as reader from './reader'
 
 import Config from './config'
+import { GroupFile } from './reader'
 
 interface registerItem {
     prefix: Array<string>
@@ -43,9 +43,9 @@ class Main {
     keyIn(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
         this.items = []
         if (this.inPackhouseFile) {
-            this.readed = reader.packhouseFile(this.config, document, position.line)
+            this.readed = new GroupFile(document.getText(), position.line)
         } else {
-            this.readed = reader.handlerFile(this.config, document, position.line)
+            this.readed = new GroupFile(document.getText(), position.line) 
         }
         let lineText = document.lineAt(position.line).text
         let charPosition = position.character
@@ -67,7 +67,13 @@ class Main {
     handler() {
         this.register(['.tool('], (document, position) => {
             if (this.inPackhouseFile) {
-                
+                if (this.readed.getType() === 'tool') {
+                    if (this.readed.getAction === 'handler') {
+
+                    } else {
+
+                    }
+                }
             } else {
                 let tools = this.config.getAllTools()
                 for (let tool of tools) {

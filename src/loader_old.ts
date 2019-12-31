@@ -5,6 +5,32 @@ function clearString(text: string): any {
     let result = ''
     let inString: any = false
     for (let i = text.length; i > 0; i--) {
+        // break point
+        if (count === 0) {
+            let char = result[0]
+            if (char === 'v' && result.slice(0, 4) === 'var ') {
+                break
+            }
+            if (char === 'l' && result.slice(0, 4) === 'let ') {
+                break
+            }
+            if (char === 'c' && result.slice(0, 6) === 'const ') {
+                break
+            }
+            if (char === 'i' && result.slice(0, 3) === 'if ') {
+                break
+            }
+            if (char === 'f' && result.slice(0, 4) === 'for ') {
+                break
+            }
+            if (char === '=' && result.slice(0, 2) === '= ') {
+                break
+            }
+            if (char === ',') {
+                break
+            }
+        }
+        // end
         if (count === 0 && (result[0] === 't' || result[0] === 'l')) {
             let check = result.slice(0, 5)
             if (check === 'tool(' || check === 'line(') {
@@ -69,7 +95,7 @@ function getObjectChain(lines: Array<string>, line: number): Array<string> {
     }
 }
 
-export function actionLoader(document: string, line: number) {
+export default (document: string, line: number) => {
     let doc = document.split('\n').slice(0, line + 2).join('\n')
     let clear = clearString(doc)
     let lines = clear.text.split('\n')

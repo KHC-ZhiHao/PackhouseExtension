@@ -1,125 +1,83 @@
-import loader from './loader'
+import * as fs from 'fs'
 import * as vscode from 'vscode'
 
-interface Item {
-    key: string
-    kind?: any
-    desc?: Array<string>
-    insert: string
+import * as utils from './utils'
+import * as reader from './reader'
+
+import Config from './config'
+
+interface registerItem {
+    prefix: Array<string>
+    callback: (document: vscode.TextDocument, position: vscode.Position) => void
 }
 
 class Main {
-
-    public data: any = {}
-    public help: vscode.SignatureHelp | null = null
-    public tools: Array<Item> = []
     public items: Array<vscode.CompletionItem> = []
-    public lineText: string = ''
-    public position: vscode.Position | null = null
-    public document: vscode.TextDocument | null = null
-    public configPath: string
-
+    public files: Array<string> = []
+    public readed: any = {}
+    public caller: any = null
+    public config: Config = new Config({})
+    public configPath: string = ''
+    public registerItems: Array<registerItem> = []
+    public inPackhouseFile: boolean = false
     constructor(configPath: any) {
         this.configPath = configPath
-        this.init()
-        this.update()
+        this.handler()
+        this.install()
+        this.updatePage()
+        fs.watchFile(this.configPath, () => this.install())
     }
 
-    init() {
-        this.data = {}
-        this.help = null
+    install() {
+        let data = {}
+        try {
+            data = JSON.parse(fs.readFileSync(this.configPath, 'utf8'))
+        } catch (error) {}
+        this.config = new Config(data)
+    }
+
+    updatePage() {
+        this.inPackhouseFile = utils.checkInPackhouse()
+    }
+
+    keyIn(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
         this.items = []
-        this.lineText = ''
-    }
-
-    initContext(document: vscode.TextDocument, position: vscode.Position) {
-        this.init()
-        this.document = document
-        this.lineText = document.lineAt(position.line).text
-        this.position = position
-    }
-
-    update() {
-        this.init()
-        this.data = require(this.configPath)
-        this.tools = []
-        for (let group in this.data.groups) {
-            let iGroup = this.data.groups[group] || {}
-            for (let tool in iGroup.tools) {
-                this.tools.push({
-                    key: `${group}/${tool}`,
-                    insert: `'${group}/${tool}'`
-                })
+        if (this.inPackhouseFile) {
+            this.readed = reader.packhouseFile(this.config, document, position.line)
+        } else {
+            this.readed = reader.handlerFile(this.config, document, position.line)
+        }
+        let lineText = document.lineAt(position.line).text
+        let charPosition = position.character
+        for (let item of this.registerItems) {
+            if (utils.checkPerfix(lineText, charPosition, item.prefix)) {
+                item.callback(document, position)
             }
         }
-    }
-
-    isInGroupFile() {
-
-    }
-
-    isPackhouse() {
-
-    }
-
-    getCallTarget(text: string, line: number) {
-        let target = loader(text, line)
-        return {
-            name: 'aws@dynanodb/get',
-            pack: [],
-            type: 'tool',
-            method: 'action',
-            hasNoGood: false,
-            hasAlways: false
-        }
-    }
-
-    exportHelp(document: vscode.TextDocument, position: vscode.Position): vscode.SignatureHelp | null {
-        this.initContext(document, position)
-        this.help = null
-        this.perfix(['.promise(', '.action('], () => {
-            let target = this.getCallTarget(document.getText(), position.line)
-            if (target) {
-                this.setHelp('action', `# ouo`)
-            }
-        })
-        return this.help
-    }
-
-    exportInputKey(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
-        this.initContext(document, position)
-        this.perfix('.tool(', () => this.add(this.tools))
         return this.items
     }
 
-    perfix(key: string | Array<string>, callback: () => void) {
-        let position = this.position ? this.position.character : 0
-        if (Array.isArray(key)) {
-            for (let text of key) {
-                if (this.lineText.slice(position - text.length, position) === text) {
-                    callback()
+    register(prefix: Array<string>, callback: (document: vscode.TextDocument, position: vscode.Position) => void) {
+        this.registerItems.push({
+            prefix,
+            callback
+        })
+    }
+
+    handler() {
+        this.register(['.tool('], (document, position) => {
+            if (this.inPackhouseFile) {
+                
+            } else {
+                let tools = this.config.getAllTools()
+                for (let tool of tools) {
+                    this.items.push(utils.getCompletionItem(tool.name, `'${tool.name}'`, [
+                        'packhouse tool',
+                        tool.info
+                    ]))
                 }
             }
-        } else {
-            if (this.lineText.slice(position - key.length, position) === key) {
-                callback()
-            }
-        }
-    }
-
-    add(items: Array<Item>) {
-        for (let item of items) {
-            let completionItem = new vscode.CompletionItem(item.key, item.kind || vscode.CompletionItemKind.Enum)
-            completionItem.insertText = item.insert
-            completionItem.sortText = '0'
-            completionItem.documentation = new vscode.MarkdownString(item.desc ? item.desc.join('\n') : 'packhouse')
-            this.items.push(completionItem)
-        }
-    }
-
-    setHelp(label: string, documentation?: string) {
-        this.help = new vscode.SignatureHelp()
-        this.help.signatures = [new vscode.SignatureInformation(label, new vscode.MarkdownString(documentation))]
+        })
     }
 }
 

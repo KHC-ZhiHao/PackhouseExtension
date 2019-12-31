@@ -21,9 +21,16 @@ function findNode(nowLine: number, source: ts.SourceFile, nodes: Array<ts.Node>)
     return null
 }
 
+function findPropertyLike(source: ts.SourceFile, property: string) {
+    
+}
+
 function getDocNode(document: string, line: number) {
     let source = getSource(document)
-    return findNode(line, source, source.getChildren())
+    return {
+        source,
+        node: findNode(line, source, source.getChildren())
+    }
 }
 
 function getPropertyName(text: string): string | null {
@@ -52,9 +59,12 @@ function getPropertyNameMatch(node: ts.Node, target: Array<string>): string | nu
 export class GroupFile {
     public node: ts.Node | null = null
     public types: Array<string> = ['tools', 'lines']
+    public source: ts.SourceFile | null = null
     public actions: Array<string> = ['install', 'handler']
     constructor(document: string, line: number) {
-        this.node = getDocNode(document, line)
+        let data = getDocNode(document, line)
+        this.node = data.node
+        this.source = data.source
     }
 
     getUser(node?: ts.Node): string | null {
@@ -96,6 +106,11 @@ export class GroupFile {
         if (this.node) {
             return getPropertyNameMatch(this.node, this.actions)
         }
+        return null
+    }
+
+    getMergers(node?: ts.Node) {
+        this.source
         return null
     }
 }

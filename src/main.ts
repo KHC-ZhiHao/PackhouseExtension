@@ -17,6 +17,7 @@ class Main {
     public readed: any = {}
     public caller: any = null
     public config: Config = new Config({})
+    public filePath: string | undefined = undefined
     public configPath: string = ''
     public registerItems: Array<registerItem> = []
     public inPackhouseFile: boolean = false
@@ -38,6 +39,7 @@ class Main {
 
     updatePage() {
         this.inPackhouseFile = utils.checkInPackhouse()
+        this.filePath = vscode.window.activeTextEditor?.document.uri.fsPath
     }
 
     keyIn(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {

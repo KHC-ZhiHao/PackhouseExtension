@@ -21,10 +21,6 @@ function findNode(nowLine: number, source: ts.SourceFile, nodes: Array<ts.Node>)
     return null
 }
 
-function findPropertyLike(source: ts.SourceFile, property: string) {
-    
-}
-
 function getDocNode(document: string, line: number) {
     let source = getSource(document)
     return {
@@ -38,7 +34,7 @@ function getPropertyName(text: string): string | null {
     if (text[0] === '{' || text[0] === '[') {
         return null
     }
-    let name = text.split(/:|\(/)[0]
+    let name = text.split(/:|\(|=/)[0].trim()
     if (name[0] === `"` || name[0] === `'`) {
         return name.slice(1, -1)
     }
@@ -106,11 +102,6 @@ export class GroupFile {
         if (this.node) {
             return getPropertyNameMatch(this.node, this.actions)
         }
-        return null
-    }
-
-    getMergers(node?: ts.Node) {
-        this.source
         return null
     }
 }

@@ -78,7 +78,7 @@ function clearString(text: string): any {
 function loaderLine(text: string) {
     return {
         data: text.split('.').filter(t => !!t).map(t => t.trim()),
-        done: text.includes('tool()') || text.includes('line()')
+        done: text.includes('tool()') || text.includes('line()()')
     }
 }
 
@@ -96,7 +96,7 @@ function getObjectChain(lines: Array<string>, line: number): Array<string> {
 }
 
 export default (document: string, line: number) => {
-    let doc = document.split('\n').slice(0, line + 2).join('\n')
+    let doc = document.split('\n').slice(0, line + 1).join('\n')
     let clear = clearString(doc)
     let lines = clear.text.split('\n')
     let chain = getObjectChain(lines, lines.length - 1).filter(t => !!t)

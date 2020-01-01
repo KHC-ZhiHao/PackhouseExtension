@@ -5,6 +5,14 @@ interface tool {
     info: string
 }
 
+interface line {
+    name: string
+    info: string
+    layout: Array<tool>
+    args: Array<string>
+    request: Array<string>
+}
+
 export default class {
     public data: any = {}
     constructor(data: any) {
@@ -53,6 +61,50 @@ export default class {
             tools = tools.concat(this.getGroupTools(groups, merger + '@'))
         }
         return tools
+    }
+
+    getLine(group: string, line: string, sign: string = '') {
+        if (sign) {
+            return this.data?.mergers[sign]?.groups[group]?.lines[line]
+        }
+        return this.data?.groups[group]?.lines[line]
+    }
+
+    getAllLines() {
+        let lines: Array<line> = []
+        let groups = this.data.groups || {}
+        let mergers = this.data.mergers || {}
+        lines = lines.concat(this.getGroupLines(groups))
+        for (let merger in mergers) {
+            let groups = mergers[merger].groups || {}
+            lines = lines.concat(this.getGroupLines(groups, merger + '@'))
+        }
+        return lines
+    }
+
+    getGroupLines(groups: any, sign: string = '') {
+        let lines: Array<line> = []
+        if (groups == null) {
+            return []
+        }
+        for (let group in groups) {
+            let groupLines = groups[group].lines || {}
+            for (let name in groupLines) {
+                lines.push({
+                    name: `${sign}${group}/${name}`,
+                    info: groupLines[name].info || 'no infomation',
+                    args: groupLines[name].args || [],
+                    request: groupLines[name].request || [],
+                    layout: Object.entries(groupLines[name]).map(([key, value]: any) => {
+                        return {
+                            name: key,
+                            info: value.info
+                        }
+                    })
+                })
+            }
+        }
+        return lines
     }
 
     getAllGroup() {

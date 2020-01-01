@@ -11,6 +11,21 @@ export default class {
         this.data = data
     }
 
+    getTool(group: string, tool: string, sign: string = '') {
+        if (sign) {
+            return this.data?.mergers[sign]?.groups[group]?.tools[tool]
+        }
+        return this.data?.groups[group]?.tools[tool]
+    }
+
+    getGroup(name: string, sign: string = '') {
+        if (sign) {
+            return this.data.mergers[sign].groups[name]
+        } else {
+            return this.data.groups[name]
+        }
+    }
+
     getGroupTools(groups: any, sign: string = ''): Array<tool> {
         let tools: Array<tool> = []
         if (groups == null) {
@@ -67,7 +82,9 @@ export default class {
     getGroupByPath(path: string): any {
         let groups = this.getAllGroup()
         for (let group of groups) {
-            if (nodePath.normalize(path).match(nodePath.normalize(group.data.file).slice(1))) {
+            let source = nodePath.normalize(path)
+            let target = nodePath.normalize(group.data.path.slice(1))
+            if (source.slice(-(target.length)) === target) {
                 return group
             }
         }

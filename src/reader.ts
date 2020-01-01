@@ -56,7 +56,7 @@ export class GroupFile {
     public node: ts.Node | null = null
     public types: Array<string> = ['tools', 'lines']
     public source: ts.SourceFile | null = null
-    public actions: Array<string> = ['install', 'handler']
+    public actions: Array<string> = ['install', 'handler', 'input', 'output']
     constructor(document: string, line: number) {
         let data = getDocNode(document, line)
         this.node = data.node
@@ -70,7 +70,23 @@ export class GroupFile {
             }
             let property = getPropertyName(node.getText())
             if (this.actions.includes(property || '')) {
-                return getPropertyName(node.parent.parent.getText())
+                let type = this.getType()
+                if (type) {
+                    if (type === 'line') {
+                        let now = node.parent.parent
+                        let layout = now.parent.parent
+                        if (getPropertyName(layout.getText())?.match('layout')) {
+                            return getPropertyName(layout.parent.parent.getText())
+                        } else {
+                            return getPropertyName(now.getText())
+                        }
+                    } else {
+                        return getPropertyName(node.parent.parent.getText())
+                    }
+                    
+                } else {
+                    return null
+                }
             }
             if (node.parent) {
                 return this.getUser(node.parent)

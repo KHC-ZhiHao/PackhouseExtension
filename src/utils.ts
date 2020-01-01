@@ -12,7 +12,7 @@ export function getCompletionItem(key: string, insert: string, desc?: Array<stri
     let completionItem = new vscode.CompletionItem(key, vscode.CompletionItemKind.Enum)
     completionItem.insertText = insert
     completionItem.sortText = '0'
-    completionItem.documentation = new vscode.MarkdownString(desc ? desc.join('\n') : 'packhouse')
+    completionItem.documentation = new vscode.MarkdownString(desc ? desc.join('\n\n') : 'packhouse')
     return completionItem
 }
 

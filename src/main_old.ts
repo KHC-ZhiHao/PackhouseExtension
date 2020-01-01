@@ -1,4 +1,4 @@
-import loader from './loader_old'
+import loader from './loader'
 import * as vscode from 'vscode'
 
 interface Item {

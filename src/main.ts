@@ -160,9 +160,14 @@ class Main {
                 let included = this.group?.data?.tools[user]?.included || {}
                 let packLength = this.group?.data?.tools[user]?.packLength[data?.name] || {}
                 if (included[data?.name]) {
+                    let line = null
                     let target = utils.parseName(included[data?.name].used)
-                    let merger = utils.parseName(mergers[target.group])
-                    let line = this.config.getLine(target.group, target.target, merger.sign)
+                    if (mergers[target.group]) {
+                        let merger = utils.parseName(mergers[target.group])
+                        line = this.config.getLine(target.group, target.target, merger.sign)
+                    } else {
+                        line = this.config.getLine(this.group.name, target.target, this.group.sign)
+                    }
                     if (line) {
                         this.addToolItem(line, data.method, data.hasNoGood, packLength)
                     }
@@ -171,11 +176,16 @@ class Main {
             if ((action === 'handler' || action === 'input' || action === 'output') && type === 'line') {
                 try {
                     let included = this.group?.data?.lines[user]?.included || {}
-                    let packLength = 0 // this.group?.data?.lines[user]?.packLength[data?.name] || {}
+                    let packLength = this.group?.data?.lines[user]?.packLength[data?.name] || {}
                     if (included[data?.name]) {
+                        let line = null
                         let target = utils.parseName(included[data?.name].used)
-                        let merger = utils.parseName(mergers[target.group])
-                        let line = this.config.getLine(target.group, target.target, merger.sign)
+                        if (mergers[target.group]) {
+                            let merger = utils.parseName(mergers[target.group])
+                            line = this.config.getLine(target.group, target.target, merger.sign)
+                        } else {
+                            line = this.config.getLine(this.group.name, target.target, this.group.sign)
+                        }
                         if (line) {
                             this.addToolItem(line, data.method, data.hasNoGood, packLength)
                         }

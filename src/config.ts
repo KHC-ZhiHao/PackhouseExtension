@@ -1,4 +1,5 @@
 import * as nodePath from 'path'
+import * as utils from './utils'
 
 interface tool {
     name: string
@@ -32,6 +33,55 @@ export default class {
         } else {
             return this.data.groups[name]
         }
+    }
+
+    getToolUsed(group: any, name: string, used: string = '') {
+        if (used === '') {
+            return null
+        }
+        let mergers = group.data.mergers || {}
+        let included = group?.data?.tools[name]?.included || {}
+        let packLength = group?.data?.tools[name]?.packLength[used] || {}
+        if (included[used]) {
+            let tool = null
+            let target = utils.parseName(included[used].used)
+            if (mergers[target.group]) {
+                let merger = utils.parseName(mergers[target.group])
+                tool = this.getTool(target.group, target.target, merger.sign)
+            } else {
+                tool = this.getTool(group.name, target.target, group.sign)
+            }
+            if (tool) {
+                return {
+                    tool,
+                    packLength
+                }
+            }
+        }
+        return null
+    }
+
+    getLineUsed(group: any, name: string, used: string) {
+        let mergers = group.data.mergers || {}
+        let included = group?.data?.lines[name]?.included || {}
+        let packLength = group?.data?.lines[name]?.packLength[used] || {}
+        if (included[used]) {
+            let line = null
+            let target = utils.parseName(included[used].used)
+            if (mergers[target.group]) {
+                let merger = utils.parseName(mergers[target.group])
+                line = this.getLine(target.group, target.target, merger.sign)
+            } else {
+                line = this.getLine(group.name, target.target, group.sign)
+            }
+            if (line) {
+                return {
+                    line,
+                    packLength
+                }
+            }
+        }
+        return null
     }
 
     getGroupTools(groups: any, sign: string = ''): Array<tool> {

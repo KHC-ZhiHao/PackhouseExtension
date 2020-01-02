@@ -155,43 +155,17 @@ class Main {
             if (user == null) {
                 return null
             }
-            let mergers = this.group.data.mergers || {}
+
             if (type === 'tool' && action === 'handler') {
-                let included = this.group?.data?.tools[user]?.included || {}
-                let packLength = this.group?.data?.tools[user]?.packLength[data?.name] || {}
-                if (included[data?.name]) {
-                    let line = null
-                    let target = utils.parseName(included[data?.name].used)
-                    if (mergers[target.group]) {
-                        let merger = utils.parseName(mergers[target.group])
-                        line = this.config.getLine(target.group, target.target, merger.sign)
-                    } else {
-                        line = this.config.getLine(this.group.name, target.target, this.group.sign)
-                    }
-                    if (line) {
-                        this.addToolItem(line, data.method, data.hasNoGood, packLength)
-                    }
+                let used = this.config.getToolUsed(this.group, user, data?.name)
+                if (used) {
+                    this.addToolItem(used.tool, data.method, data.hasNoGood, used.packLength)
                 }
             }
             if ((action === 'handler' || action === 'input' || action === 'output') && type === 'line') {
-                try {
-                    let included = this.group?.data?.lines[user]?.included || {}
-                    let packLength = this.group?.data?.lines[user]?.packLength[data?.name] || {}
-                    if (included[data?.name]) {
-                        let line = null
-                        let target = utils.parseName(included[data?.name].used)
-                        if (mergers[target.group]) {
-                            let merger = utils.parseName(mergers[target.group])
-                            line = this.config.getLine(target.group, target.target, merger.sign)
-                        } else {
-                            line = this.config.getLine(this.group.name, target.target, this.group.sign)
-                        }
-                        if (line) {
-                            this.addToolItem(line, data.method, data.hasNoGood, packLength)
-                        }
-                    }
-                } catch (error) {
-                    console.log(error)
+                let used = this.config.getLineUsed(this.group, user, data?.name)
+                if (used) {
+                    this.addToolItem(used.line, data.method, data.hasNoGood, used.packLength)
                 }
             }
         })
@@ -324,20 +298,13 @@ class Main {
                 return null
             }
             let type = this.readed.getType()
-            let mergers = this.group.data.mergers || {}
             if (type) {
                 if (action === 'handler' && type === 'tool') {
                     let user = this.readed.getUser()
                     if (user) {
-                        let included = this.group?.data.tools[user]?.included || {}
-                        let packLength = this.group?.data.tools[user]?.packLength[data?.name] || {}
-                        if (data?.type === 'tool' && included[data?.name]) {
-                            let target = utils.parseName(included[data?.name].used)
-                            let merger = utils.parseName(mergers[target.group])
-                            let tool = this.config.getTool(target.group, target.target, merger.sign)
-                            if (tool) {
-                                this.addToolItem(tool, data.method, data.hasNoGood, packLength)
-                            }
+                        let used = this.config.getToolUsed(this.group, user, data?.name)
+                        if (used) {
+                            this.addToolItem(used.tool, data.method, data.hasNoGood, used.packLength)
                         }
                     }
                 }

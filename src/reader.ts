@@ -1,14 +1,22 @@
 import * as ts from 'typescript'
+import { clearArgs } from './utils'
 
 function getSource(document: string): ts.SourceFile {
     return ts.createSourceFile('AST.ts', document, ts.ScriptTarget.ES2020, true)
 }
 
-function findNode(nowLine: number, source: ts.SourceFile, nodes: Array<ts.Node>): ts.Node | null {
+function findNode(nowLine: number, source: ts.SourceFile, nodes: Array<ts.Node>, precise: boolean = false): ts.Node | null {
     for (let i = 0; i < nodes.length; i++) {
         let node = nodes[i]
         let line = source.getLineAndCharacterOfPosition(node.pos).line
         let endLine = source.getLineAndCharacterOfPosition(node.end).line
+        if (precise && line <= nowLine - 1 && nowLine - 1 < endLine) {
+            if (node.getText().trim() === '.') {
+                return nodes[i - 1]
+            } else {
+                return node
+            }
+        }
         if (line < nowLine && nowLine < endLine) {
             let children = node.getChildren()
             if (children.length === 0) {
@@ -52,15 +60,59 @@ function getPropertyNameMatch(node: ts.Node, target: Array<string>): string | nu
     }
 }
 
-export class GroupFile {
+class Unit {
+    public unit: ts.Node
+    public unitText: string = ''
+    constructor(unit: ts.Node) {
+        this.unit = unit
+        this.unitText = unit.getText()
+    }
+
+    getAction() {
+        let clear = clearArgs(this.unitText)
+        let chain = clear.text.split('.').filter(t => !!t).map(t => t.trim())
+        if (chain.includes('line()()') || chain.includes('tool()')) {
+            return {
+                name: clear.used[0].slice(1, -1),
+                type: chain.includes('line()()') ? 'line' : 'tool',
+                method: chain.includes('action()') ? 'action' : (chain.includes('promise()') ? 'promise' : null),
+                hasNoGood: chain.includes('noGood()'),
+                hasAlways: chain.includes('always()')
+            }
+        }
+        return null
+    }
+
+    hasUnitKeyWord(keyword: string): boolean {
+        if (this.unitText) {
+            return !!clearArgs(this.unitText).text.match(keyword)
+        }
+        return false
+    }
+}
+
+export default class {
+    public doc: any
+    public line: number = 0
     public node: ts.Node | null = null
     public types: Array<string> = ['tools', 'lines']
     public source: ts.SourceFile | null = null
     public actions: Array<string> = ['install', 'handler', 'input', 'output']
     constructor(document: string, line: number) {
-        let data = getDocNode(document, line)
-        this.node = data.node
-        this.source = data.source
+        this.doc = getDocNode(document, line)
+        this.line = line
+        this.node = this.doc.node
+        this.source = this.doc.source
+    }
+
+    getUnit(): Unit | null {
+        if (this.source && this.node) {
+            let node = findNode(this.line, this.source, this.node.getChildren(), true)
+            if (node) {
+                return new Unit(node)
+            }
+        }
+        return null
     }
 
     getUser(node?: ts.Node): string | null {

@@ -4,7 +4,10 @@
 	"publisher": "khczhihao",
 	"description": "",
 	"version": "0.0.1",
-	"repository": "https://github.com/KHC-ZhiHao/PackhouseVSCodeExtension",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/KHC-ZhiHao/PackhouseVSCodeExtension"
+	},
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"icon": "icon.png",
 	"engines": {
@@ -37,3 +40,4 @@
 		"typescript": "^3.6.4",
 		"glob": "^7.1.6"
 	}
+}

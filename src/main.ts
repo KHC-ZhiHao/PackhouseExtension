@@ -49,10 +49,12 @@ class Main {
     public readed: any = {}
     public config: Config = new Config({})
     public filePath: string | undefined = undefined
+    public workPath: string
     public configPath: string = ''
     public registerItems: Array<registerItem> = []
     public inPackhouseFile: boolean = false
-    constructor(configPath: any) {
+    constructor(workPath: string, configPath: any) {
+        this.workPath = workPath
         this.configPath = configPath
         this.handler()
         this.install()

@@ -30,6 +30,8 @@
 		"vscode-test": "^1.2.2"
 	},
 	"dependencies": {
+		"fn-args": "^5.0.0",
+		"packhouse": "git+https://github.com/KHC-ZhiHao/Packhouse.git",
 		"typescript": "^3.6.4",
 		"glob": "^7.1.6"
 	}

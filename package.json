@@ -1,8 +1,12 @@
 {
 	"name": "packhouse",
 	"displayName": "Packhouse",
+	"publisher": "khczhihao",
 	"description": "",
 	"version": "0.0.1",
+	"repository": "https://github.com/KHC-ZhiHao/PackhouseVSCodeExtension",
+	"license": "SEE LICENSE IN LICENSE.txt",
+	"icon": "icon.png",
 	"engines": {
 		"vscode": "^1.41.0"
 	},
@@ -30,9 +34,6 @@
 		"vscode-test": "^1.2.2"
 	},
 	"dependencies": {
-		"fn-args": "^5.0.0",
-		"packhouse": "git+https://github.com/KHC-ZhiHao/Packhouse.git",
 		"typescript": "^3.6.4",
 		"glob": "^7.1.6"
 	}
-}

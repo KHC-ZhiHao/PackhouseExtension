@@ -12,9 +12,11 @@
 
 #### 自動建構參數
 
-#### Snippets
+![auto-arg](assets/auto-params.png)
 
 #### 移動至定義
+
+![gotodefine](assets/gotodefine.png)
 
 ### 使用條件
 
@@ -50,3 +52,38 @@ npm run read-ts
 此時你應該能發現`.packhouse`已經被建立，如果擴展沒有被觸發，可以考慮重整VScode。
 
 > 當`--watch`時會在你修改檔案時重新建構`.packhouse`的結構，此時擴展也會同步更新，因此建議在開發時保持啟動。
+
+### 常用Snippets
+
+#### handler.tool
+
+```js
+self.tool()
+    .noGood(self.error)
+```
+
+#### handler.line
+
+```js
+self.line()()
+    .action(self.access())
+```
+
+#### step
+
+```js
+function name(self, next) {
+    // ...do something
+}
+```
+
+#### step.tool
+
+```js
+function name(self, next) {
+    self.tool()
+        .always(next)
+        .noGood(e => self.response(e, 500))
+    }
+}
+```

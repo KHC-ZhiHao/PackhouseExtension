@@ -31,9 +31,9 @@
         ],
         "description": "packhouse handler line"
     },
-    "temp.tool": {
+    "step.tool": {
         "prefix": [
-            "temp.tool"
+            "step.tool"
         ],
         "body": [
             "function ${1:name}(self, next) {",

@@ -9,7 +9,7 @@
 		"url": "https://github.com/KHC-ZhiHao/PackhouseVSCodeExtension"
 	},
 	"license": "SEE LICENSE IN LICENSE.txt",
-	"icon": "icon.png",
+	"icon": "assets/icon.png",
 	"engines": {
 		"vscode": "^1.41.0"
 	},
@@ -17,10 +17,21 @@
 		"Other"
 	],
 	"activationEvents": [
-		"workspaceContains: **/.packhouse.json"
+		"workspaceContains: **/.packhouse"
 	],
 	"main": "./out/extension.js",
-	"contributes": {},
+	"contributes": {
+		"snippets": [
+			{
+				"language": "javascript",
+				"path": "./snippets.json"
+			},
+			{
+				"language": "typescript",
+				"path": "./snippets.json"
+			}
+		]
+	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
@@ -29,15 +40,15 @@
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
-		"@types/mocha": "^5.2.7",
 		"@types/node": "^12.11.7",
+		"@types/mocha": "^5.2.7",
 		"@types/vscode": "^1.41.0",
 		"mocha": "^6.2.2",
 		"tslint": "^5.20.0",
 		"vscode-test": "^1.2.2"
 	},
 	"dependencies": {
-		"typescript": "^3.6.4",
-		"glob": "^7.1.6"
+		"glob": "^7.1.6",
+		"typescript": "^3.7.4"
 	}
 }

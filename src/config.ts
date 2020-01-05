@@ -61,7 +61,33 @@ export default class {
         return null
     }
 
-    getLineUsed(group: any, name: string, used: string) {
+    getLineInToolUsed(group: any, name: string, used: string = '') {
+        if (used === '') {
+            return null
+        }
+        let mergers = group.data.mergers || {}
+        let included = group?.data?.tools[name]?.included || {}
+        let packLength = group?.data?.tools[name]?.packLength[used] || {}
+        if (included[used]) {
+            let line = null
+            let target = utils.parseName(included[used].used)
+            if (mergers[target.group]) {
+                let merger = utils.parseName(mergers[target.group])
+                line = this.getLine(target.group, target.target, merger.sign)
+            } else {
+                line = this.getLine(group.name, target.target, group.sign)
+            }
+            if (line) {
+                return {
+                    line,
+                    packLength
+                }
+            }
+        }
+        return null
+    }
+
+    getLineInLineUsed(group: any, name: string, used: string) {
         let mergers = group.data.mergers || {}
         let included = group?.data?.lines[name]?.included || {}
         let packLength = group?.data?.lines[name]?.packLength[used] || {}
@@ -184,10 +210,24 @@ export default class {
     getGroupByPath(path: string): any {
         let groups = this.getAllGroup()
         for (let group of groups) {
-            let source = nodePath.normalize(path)
-            let target = nodePath.normalize(group.data.path.slice(1))
+            let source = nodePath.normalize(path.slice(0, -3))
+            let target = nodePath.normalize(group.data.path.slice(1).replace('.ts', '').replace('.js', ''))
             if (source.slice(-(target.length)) === target) {
                 return group
+            }
+        }
+        return null
+    }
+
+    getPathByGroup(name: string, sign: string) {
+        let groups = this.getAllGroup()
+        for (let group of groups) {
+            if (group.name === name) {
+                if (sign && group.sign === sign) {
+                    return group.data.path
+                } else {
+                    return group.data.path
+                }
             }
         }
         return null

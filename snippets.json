@@ -1,0 +1,48 @@
+{
+    "step": {
+        "prefix": [
+            "step"
+        ],
+        "body": [
+            "function ${1:name}(self, next) {",
+            "\t$0",
+            "},"
+        ],
+        "description": "packhouse step template"
+    },
+    "handler.tool": {
+        "prefix": [
+            "handler.tool"
+        ],
+        "body": [
+            "self.tool($1)",
+            "\t.noGood(self.error)",
+            "\t$0"
+        ],
+        "description": "packhouse handler tool"
+    },
+    "handler.line": {
+        "prefix": [
+            "handler.line"
+        ],
+        "body": [
+            "self.line($1)($2)",
+            "\t.action(self.access())"
+        ],
+        "description": "packhouse handler line"
+    },
+    "temp.tool": {
+        "prefix": [
+            "temp.tool"
+        ],
+        "body": [
+            "function ${1:name}(self, next) {",
+            "\tself.tool($2)",
+            "\t\t.always(next)",
+            "\t\t.noGood(e => self.response(e, 500))",
+            "\t\t$0",
+            "},"
+        ],
+        "description": "packhouse step tool"
+    }
+}

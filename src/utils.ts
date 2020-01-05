@@ -25,7 +25,8 @@ export function checkPerfix(text: string, char: number = 0, keys: Array<string>)
 
 export function parseName(name: string) {
     let sign = name.match('@') ? name.split('@')[0] : ''
-    let target = name.match('/') ? name.replace(sign + '@', '').split('/') : ['', name]
+    name = name.replace(sign + '@', '')
+    let target = name.match('/') ? name.split('/') : (sign ? [name, ''] : ['', name])
     return {
         sign,
         group: target[0],
@@ -39,8 +40,14 @@ export function clearArgs(text: string) {
     let index: number = 0
     let result: string = ''
     let inString: any = false
+    let typeUserIndex = 0
     for (let i = text.length; i >= 0; i--) {
         let char = text[i]
+        if (result.slice(0, 4) === 'line' || result.slice(0, 4) === 'tool') {
+            if (typeUserIndex === 0) {
+                typeUserIndex = used.length - 1
+            }
+        }
         if (char === `"` || char === `'` || char === '`') {
             if (inString) {
                 if (inString === char && text[i - 1] !== '\\') {
@@ -74,8 +81,9 @@ export function clearArgs(text: string) {
         }
     }
     return {
-        used: used.slice(1).reverse(),
-        text: result
+        used,
+        text: result,
+        typeUserIndex
     }
 }
 

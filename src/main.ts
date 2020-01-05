@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as path from 'path'
 import * as vscode from 'vscode'
 import * as utils from './utils'
 
@@ -49,24 +50,33 @@ class Main {
     public readed: any = {}
     public config: Config = new Config({})
     public filePath: string | undefined = undefined
+    public rootPath: string = ''
     public workPath: string
     public configPath: string = ''
     public registerItems: Array<registerItem> = []
     public inPackhouseFile: boolean = false
-    constructor(workPath: string, configPath: any) {
+    constructor(workPath: string, configPath: string) {
         this.workPath = workPath
+        this.rootPath = configPath.replace('.packhouse/dist.json', '').slice(0, -1)
         this.configPath = configPath
         this.handler()
         this.install()
         this.updatePage()
-        fs.watchFile(this.configPath, () => this.install())
+        fs.watchFile(this.configPath, () => {
+            console.log('Packhouse: File change...')
+            this.install()
+            this.updatePage()
+            console.log('Packhouse: Reinstall done.')
+        })
     }
 
     install() {
         let data = {}
         try {
             data = JSON.parse(fs.readFileSync(this.configPath, 'utf8'))
-        } catch (error) {}
+        } catch (error) {
+            console.log(error)
+        }
         this.config = new Config(data)
     }
 
@@ -75,7 +85,9 @@ class Main {
             this.filePath = vscode.window.activeTextEditor?.document.uri.fsPath
             this.group = this.config.getGroupByPath(this.filePath || '')
             this.inPackhouseFile = !!this.group
-        } catch (error) {}
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     keyIn(document: vscode.TextDocument, position: vscode.Position): Array<vscode.CompletionItem> {
@@ -91,6 +103,74 @@ class Main {
         return this.items
     }
 
+    openFile(filePath: string, match?: string) {
+        var lang = vscode.window.activeTextEditor.document.languageId
+        let ext = lang === 'typescript' ? '.ts' : '.js'
+        var openPath = vscode.Uri.file(filePath + ext)
+        vscode.workspace.openTextDocument(openPath).then(doc => {
+            vscode.window.showTextDocument(doc)
+            setTimeout(() => {
+                if (match) {
+                    this.toLineByMatch(doc.getText(), match)
+                }
+            }, 200)
+        })
+    }
+
+    toLine(lineNumber) {
+        let editor = vscode.window.activeTextEditor
+        let range = editor.document.lineAt(lineNumber - 1).range
+        editor.selection = new vscode.Selection(range.start, range.end)
+        editor.revealRange(range)
+    }
+
+    toLineByMatch(doc, text) {
+        let lines = doc.split('\n')
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].match(text)) {
+                return this.toLine(i + 1)
+            }
+        }
+    }
+
+    definition(document: vscode.TextDocument, position: vscode.Position) {
+        try {
+            let reader = new Reader(document.getText(), position.line)
+            let data = reader.getUnit()?.getAction()
+            if (data == null) {
+                return null
+            }
+            if (this.inPackhouseFile === false) {
+                let name = utils.parseName(data.name)
+                let path = this.config.getPathByGroup(name.group, name.sign)
+                if (path) {
+                    this.openFile(path, name.target + ':')
+                }
+                return null
+            }
+            let user = reader.getUser()
+            let type = reader.getType()
+            let action = reader.getAction()
+            if (type == null || user == null) {
+                return null
+            }
+            if (action === 'install') {
+                let name = utils.parseName(data.name)
+                if (name.group) {
+                    let target = utils.parseName(this.group.data.mergers[name.group])
+                    let path = this.config.getPathByGroup(target.group, target.sign)
+                    if (path) {
+                        this.openFile(path, name.target + ': {')
+                    }
+                } else {
+                    this.toLineByMatch(document.getText(), name.target + ': {')
+                }
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     register(prefix: Array<string>, callback: (perfix: Array<string>, document: vscode.TextDocument, position: vscode.Position) => void) {
         this.registerItems.push({
             prefix,
@@ -99,39 +179,56 @@ class Main {
     }
 
     addToolItem(tool: any, method: string, hasNoGood: boolean, pack: number = 0) {
-        try {
-            let handler = getToolHandler(method, tool, hasNoGood, pack)
-            this.items.push(utils.getCompletionItem('params', handler.insert, [
-                'packhouse tool',
-                handler.desc
-            ]))
-            if (method === 'action') {
-                this.items.push(utils.getCompletionItem('params-no-callback', handler.noCallback, [
-                    'packhouse tool',
-                    handler.desc
-                ]))
-            }
-        } catch (error) {
-            console.log(error)
+        let handler = getToolHandler(method, tool, hasNoGood, pack)
+        this.addItem('args', handler.insert, [handler.desc])
+        if (method === 'action') {
+            this.addItem('args-and-no-callback', handler.noCallback, [handler.desc])
         }
     }
 
     addItem(name: string, insert: string, docs: Array<string> = []) {
-        this.items.push(utils.getCompletionItem(name, insert, ['packhouse extension:'].concat(docs)))
+        this.items.push(utils.getCompletionItem(name, insert, ['### packhouse extension'].concat(docs)))
     }
 
     handler() {
         this.register(['.'], (prefix, document, position) => {
             let data = this.readed.getUnit()?.getAction()
-            if (data == null) {
+            if (data == null || data.method != null || data.type !== 'line') {
                 return null
             }
-            if (data.type === 'line' && data.method == null) {
+            if (this.inPackhouseFile === false) {
                 let name = utils.parseName(data.name)
-                let line = this.config.getLine(name.group, name.target, name.sign)
+                let line = this.config.getLine(name.group, name.target, name.sign) || []
                 for (let tool in line.layout) {
                     let handler = getToolHandler('line', line.layout[tool], false)
                     this.addItem(tool, `${tool}(${handler.insert})`, [handler.desc])
+                }
+                return null
+            }
+            let user = this.readed.getUser()
+            let type = this.readed.getType()
+            let action = this.readed.getAction()
+            if (type == null || user == null) {
+                return null
+            }
+            if (type === 'tool' && action === 'handler') {
+                let used = this.config.getLineInToolUsed(this.group, user, data?.name)
+                if (used) {
+                    for (let tool in used.line.layout) {
+                        let handler = getToolHandler('line', used.line.layout[tool], false)
+                        this.addItem(tool, `${tool}(${handler.insert})`, [handler.desc])
+                    }
+                    return null
+                }
+            }
+            if (type === 'line' && (action === 'handler' || action === 'input' || action === 'output')) {
+                let used = this.config.getLineInLineUsed(this.group, user, data?.name)
+                if (used) {
+                    for (let tool in used.line.layout) {
+                        let handler = getToolHandler('line', used.line.layout[tool], false)
+                        this.addItem(tool, `${tool}(${handler.insert})`, [handler.desc])
+                    }
+                    return null
                 }
             }
         })
@@ -146,6 +243,7 @@ class Main {
                     let line = this.config.getLine(name.group, name.target, name.sign)
                     let handler = getToolHandler('line', line, false)
                     this.addItem('params', `${handler.insert}`, [handler.desc])
+                    return null
                 }
             }
             let type = this.readed.getType()
@@ -159,23 +257,23 @@ class Main {
             }
 
             if (type === 'tool' && action === 'handler') {
-                let used = this.config.getToolUsed(this.group, user, data?.name)
+                let used = this.config.getLineInToolUsed(this.group, user, data?.name)
                 if (used) {
-                    this.addToolItem(used.tool, data.method, data.hasNoGood, used.packLength)
+                    this.addToolItem(used.line, 'line', data.hasNoGood, used.packLength)
                 }
             }
             if ((action === 'handler' || action === 'input' || action === 'output') && type === 'line') {
-                let used = this.config.getLineUsed(this.group, user, data?.name)
+                let used = this.config.getLineInLineUsed(this.group, user, data?.name)
                 if (used) {
-                    this.addToolItem(used.line, data.method, data.hasNoGood, used.packLength)
+                    this.addToolItem(used.line, 'line', data.hasNoGood, used.packLength)
                 }
             }
         })
-        this.register(['.line('], (prefix, document, position) => {
+        this.register(['.line(\'', '.line("', '.line`'], (prefix, document, position) => {
             if (this.inPackhouseFile === false) {
                 let lines = this.config.getAllLines()
                 for (let line of lines) {
-                    this.addItem(line.name, `'${line.name}'`, [line.info])
+                    this.addItem(line.name, `${line.name}`, [line.info])
                 }
                 return null
             }
@@ -189,14 +287,14 @@ class Main {
                 let mergers = this.group.data.mergers || {}
                 for (let line in lines) {
                     let target = lines[line]
-                    this.addItem(line, `'${line}'`, [utils.getArgsDoc(target.args, target.request)])
+                    this.addItem(line, `${line}`, [utils.getArgsDoc(target.args, target.request)])
                 }
                 for (let merger in mergers) {
                     let data = utils.parseName(mergers[merger])
                     let group = this.config.getGroup(data.group, data.sign)
                     for (let line in group.lines) {
                         let target = group.lines[line]
-                        this.addItem(`${merger}/${line}`, `'${merger}/${line}'`, [utils.getArgsDoc(target.args, target.request)])
+                        this.addItem(`${merger}/${line}`, `${merger}/${line}`, [utils.getArgsDoc(target.args, target.request)])
                     }
                 }
             }
@@ -207,7 +305,7 @@ class Main {
                     for (let include in included) {
                         let target = included[include]
                         if (target.type === 'line') {
-                            this.addItem(include, `'${include}'`)
+                            this.addItem(include, `${include}`)
                         }
                     }
                 }
@@ -219,17 +317,17 @@ class Main {
                     for (let include in included) {
                         let target = included[include]
                         if (target.type === 'line') {
-                            this.addItem(include, `'${include}'`, [`${include} : ${target.used}`])
+                            this.addItem(include, `${include}`, [`${include} : ${target.used}`])
                         }
                     }
                 }
             }
         })
-        this.register(['.tool('], () => {
+        this.register(['.tool(\'', '.tool("', '.tool(`'], () => {
             if (this.inPackhouseFile === false) {
                 let tools = this.config.getAllTools()
                 for (let tool of tools) {
-                    this.addItem(tool.name, `'${tool.name}'`, [tool.info])
+                    this.addItem(tool.name, `${tool.name}`, [tool.info])
                 }
                 return null
             }
@@ -242,13 +340,13 @@ class Main {
                 let tools = this.group.data.tools || {}
                 let mergers = this.group.data.mergers || {}
                 for (let tool in tools) {
-                    this.addItem(tool, `'${tool}'`)
+                    this.addItem(tool, `${tool}`)
                 }
                 for (let merger in mergers) {
                     let data = utils.parseName(mergers[merger])
                     let group = this.config.getGroup(data.group, data.sign)
                     for (let tool in group.tools) {
-                        this.addItem(`${merger}/${tool}`, `'${merger}/${tool}'`, [`${merger} : ${mergers[merger]}`])
+                        this.addItem(`${merger}/${tool}`, `${merger}/${tool}`, [`${merger} : ${mergers[merger]}`])
                     }
                 }
             }
@@ -259,7 +357,7 @@ class Main {
                     for (let include in included) {
                         let target = included[include]
                         if (target.type === 'tool') {
-                            this.addItem(include, `'${include}'`, [`${include} : ${target.used}`])
+                            this.addItem(include, `${include}`, [`${include} : ${target.used}`])
                         }
                     }
                 }
@@ -271,7 +369,7 @@ class Main {
                     for (let include in included) {
                         let target = included[include]
                         if (target.type === 'tool') {
-                            this.addItem(include, `'${include}'`, [`${include} : ${target.used}`])
+                            this.addItem(include, `${include}`, [`${include} : ${target.used}`])
                         }
                     }
                 }
@@ -318,14 +416,13 @@ class Main {
                 return null
             }
             this.addItem('NoGoodError', 'self.error')
-            this.addItem('NoGoodResponse', 'e => self.response(e, 500)')
         })
         this.register(['.always('], (prefix, document, position) => {
             let data = this.readed.getUnit()?.getAction()
             if (data == null || data?.type !== 'tool') {
                 return null
             }
-            this.addItem('AlwaysNext', 'next', ['packhouse always next'])
+            this.addItem('Always', '({ result, success }) => {$0}', ['packhouse always next'])
         })
     }
 }

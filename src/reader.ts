@@ -73,7 +73,7 @@ class Unit {
         let chain = clear.text.split('.').filter(t => !!t).map(t => t.trim())
         if (chain.includes('line()()') || chain.includes('tool()')) {
             return {
-                name: clear.used[0].slice(1, -1),
+                name: clear.used[clear.typeUserIndex].slice(1, -1),
                 type: chain.includes('line()()') ? 'line' : 'tool',
                 method: chain.includes('action()') ? 'action' : (chain.includes('promise()') ? 'promise' : null),
                 hasNoGood: chain.includes('noGood()'),

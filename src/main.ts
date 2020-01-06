@@ -1,5 +1,4 @@
 import * as fs from 'fs'
-import * as path from 'path'
 import * as vscode from 'vscode'
 import * as utils from './utils'
 
@@ -63,10 +62,8 @@ class Main {
         this.install()
         this.updatePage()
         fs.watchFile(this.configPath, () => {
-            console.log('Packhouse: File change...')
             this.install()
             this.updatePage()
-            console.log('Packhouse: Reinstall done.')
         })
     }
 
@@ -280,7 +277,6 @@ class Main {
             if (user == null) {
                 return null
             }
-
             if (type === 'tool' && action === 'handler') {
                 let used = this.config.getLineInToolUsed(this.group, user, data?.name)
                 if (used) {

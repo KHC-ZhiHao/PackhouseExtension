@@ -68,13 +68,14 @@ class Unit {
         this.unitText = unit.getText()
     }
 
-    getAction() {
+    getAction(lineEasy: boolean = false) {
         let clear = clearArgs(this.unitText)
         let chain = clear.text.split('.').filter(t => !!t).map(t => t.trim())
-        if (chain.includes('line()()') || chain.includes('tool()')) {
+        let lineTarget = lineEasy ? 'line()' : 'line()()'
+        if (chain.includes(lineTarget) || chain.includes('tool()')) {
             return {
-                name: clear.used[clear.typeUserIndex].slice(1, -1),
-                type: chain.includes('line()()') ? 'line' : 'tool',
+                name: clear.used[clear.typeUserIndex].split(',')[0].trim().slice(1, -1),
+                type: chain.includes(lineTarget) ? 'line' : 'tool',
                 method: chain.includes('action()') ? 'action' : (chain.includes('promise()') ? 'promise' : null),
                 hasNoGood: chain.includes('noGood()'),
                 hasAlways: chain.includes('always()')

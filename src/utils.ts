@@ -102,8 +102,6 @@ export function getArgsDoc(args: Array<string>, request: Array<string>, response
         output.push(args[i] + ': ' + request[i] || 'any')
     }
     return [
-        '```ts',
-        `function (${output.join(', ')}) : ${response}`,
-        '```'
+        `function (${output.join(', ')}) : ${response}`
     ].join('\n')
 }

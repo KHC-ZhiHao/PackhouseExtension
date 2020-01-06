@@ -133,7 +133,7 @@ class Main {
     hover(document: vscode.TextDocument, position: vscode.Position) {
         try {
             let reader = new Reader(document.getText(), position.line)
-            let data = reader.getUnit()?.getAction()
+            let data = reader.getUnit()?.getAction(true)
             if (data == null) {
                 return null
             }
@@ -144,6 +144,34 @@ class Main {
                     target = this.config.getTool(name.group, name.target, name.sign)
                 } else {
                     target = this.config.getLine(name.group, name.target, name.sign)
+                }
+                return new vscode.Hover({
+                    language: 'typescript',
+                    value: utils.getArgsDoc(target.args, target.request, target.response || 'void')
+                })
+            }
+            let user = reader.getUser()
+            let type = reader.getType()
+            let action = reader.getAction()
+            if (type == null || user == null) {
+                return null
+            }
+            if (action === 'install') {
+                let name = utils.parseName(data.name)
+                let target = null
+                if (name.group) {
+                    let gname = utils.parseName(this.group.data.mergers[name.group])
+                    if (data.type === 'tool') {
+                        target = this.config.getTool(gname.group, name.target, gname.sign)
+                    } else {
+                        target = this.config.getLine(gname.group, name.target, gname.sign)
+                    }
+                } else {
+                    if (data.type === 'tool') {
+                        target = this.config.getTool(this.group.name, name.target, this.group.sign)
+                    } else {
+                        target = this.config.getLine(this.group.name, name.target, this.group.sign)
+                    }
                 }
                 return new vscode.Hover({
                     language: 'typescript',

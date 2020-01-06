@@ -18,6 +18,8 @@
 
 ![gotodefine](assets/gotodefine.png)
 
+#### Hover訊息
+
 ### 使用條件
 
 該擴展的觸發機制是判斷有無.packhouse的資料夾，內部的資料必須藉由Packhouse CLI來建構，因此你可能需要：
@@ -34,6 +36,7 @@ npm install packhouse-cli -g
 {
     "script": {
         "read": "packhouse read --watch --main ./src/main.js",
+        // typescript請使用以下這段
         "read-ts": "packhouse read --ts --watch --main ./src/main.ts"
     }
 }

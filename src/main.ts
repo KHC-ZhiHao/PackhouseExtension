@@ -133,6 +133,31 @@ class Main {
         }
     }
 
+    hover(document: vscode.TextDocument, position: vscode.Position) {
+        try {
+            let reader = new Reader(document.getText(), position.line)
+            let data = reader.getUnit()?.getAction()
+            if (data == null) {
+                return null
+            }
+            if (this.inPackhouseFile === false) {
+                let name = utils.parseName(data.name)
+                let target = null
+                if (data.type === 'tool') {
+                    target = this.config.getTool(name.group, name.target, name.sign)
+                } else {
+                    target = this.config.getLine(name.group, name.target, name.sign)
+                }
+                return new vscode.Hover({
+                    language: 'typescript',
+                    value: utils.getArgsDoc(target.args, target.request, target.response || 'void')
+                })
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     definition(document: vscode.TextDocument, position: vscode.Position) {
         try {
             let reader = new Reader(document.getText(), position.line)

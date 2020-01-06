@@ -3,6 +3,10 @@ import * as vscode from 'vscode'
 
 import Main from './main'
 
+(process as NodeJS.EventEmitter).on('uncaughtException', function (err) {
+	console.log(err)
+})
+
 export function activate(context: vscode.ExtensionContext) {
 	let rootPath = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.map(item => item.uri.fsPath)[0] : null
 	if (rootPath) {
@@ -10,6 +14,11 @@ export function activate(context: vscode.ExtensionContext) {
 		if (configPath) {
 			let main = new Main(context.extensionPath, configPath)
 			let inputChars = ['.', '(', '`', '"', '\'']
+			let hover = {
+				provideHover(document, position) {
+					return main.hover(document, position)
+				}
+			}
 			let keyIn = {
 				provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
 					return main.keyIn(document, position)
@@ -24,8 +33,12 @@ export function activate(context: vscode.ExtensionContext) {
 			let JS = vscode.languages.registerCompletionItemProvider({ scheme: 'file', language: 'javascript' }, keyIn, ...inputChars)
 			let JSDefintion = vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'javascript' }, define)
 			let TSDefintion = vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'typescript' }, define)
+			let TSHover = vscode.languages.registerHoverProvider('javascript', hover)
+			let JSHover = vscode.languages.registerHoverProvider('typescript', hover)
 			context.subscriptions.push(TS)
 			context.subscriptions.push(JS)
+			context.subscriptions.push(TSHover)
+			context.subscriptions.push(JSHover)
 			context.subscriptions.push(JSDefintion)
 			context.subscriptions.push(TSDefintion)
 			vscode.window.onDidChangeActiveTextEditor(() => {

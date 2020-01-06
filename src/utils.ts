@@ -96,14 +96,14 @@ export function getInsert(args: Array<string>, request: Array<string>) {
     return output.join(', ')
 }
 
-export function getArgsDoc(args: Array<string>, request: Array<string>): string {
+export function getArgsDoc(args: Array<string>, request: Array<string>, response: string = 'void'): string {
     let output = []
     for (let i = 0; i < args.length; i++) {
         output.push(args[i] + ': ' + request[i] || 'any')
     }
     return [
         '```ts',
-        output.join(', '),
+        `function (${output.join(', ')}) : ${response}`,
         '```'
     ].join('\n')
 }

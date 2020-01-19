@@ -14,10 +14,6 @@
 
 ![auto-arg](assets/auto-params.png)
 
-#### 移動至定義
-
-![gotodefine](assets/gotodefine.png)
-
 #### Hover訊息
 
 ![hover](assets/hover.png)

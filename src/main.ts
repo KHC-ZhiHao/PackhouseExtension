@@ -433,7 +433,7 @@ class Main {
             if (data.type === 'line' && data.method === 'action') {
                 this.addItem('callback', `(error, result) => {$0}`)
                 if (this.inPackhouseFile && action === 'handler') {
-                    this.addItem('access', `self.access($0)`, [])
+                    this.addItem('assess', `self.assess($0)`, [])
                 }
             }
             if (this.inPackhouseFile === false) {

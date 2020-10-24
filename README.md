@@ -18,6 +18,10 @@
 
 ![hover](assets/hover.png)
 
+#### 前往Define
+
+![gotodefine](assets/gotodefine.png)
+
 ### 使用條件
 
 該擴展的觸發機制是判斷有無.packhouse的資料夾，內部的資料必須藉由Packhouse CLI來建構，因此你可能需要：

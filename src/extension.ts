@@ -25,23 +25,22 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			}
 			let define = {
-				provideDefinition(document: vscode.TextDocument, position: vscode.Position): any {
+				provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position): any {
 					return main.definition(document, position)
 				}
 			}
 			let TS = vscode.languages.registerCompletionItemProvider({ scheme: 'file', language: 'typescript' }, keyIn, ...inputChars)
 			let JS = vscode.languages.registerCompletionItemProvider({ scheme: 'file', language: 'javascript' }, keyIn, ...inputChars)
-			// let JSDefintion = vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'javascript' }, define)
-			// let TSDefintion = vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'typescript' }, define)
+			let JSDefintion = vscode.languages.registerTypeDefinitionProvider({ scheme: 'file', language: 'javascript' }, define)
+			let TSDefintion = vscode.languages.registerTypeDefinitionProvider({ scheme: 'file', language: 'typescript' }, define)
 			let TSHover = vscode.languages.registerHoverProvider('javascript', hover)
 			let JSHover = vscode.languages.registerHoverProvider('typescript', hover)
 			context.subscriptions.push(TS)
 			context.subscriptions.push(JS)
 			context.subscriptions.push(TSHover)
 			context.subscriptions.push(JSHover)
-			// 案ctrl會跳過去很爛==
-			// context.subscriptions.push(JSDefintion)
-			// context.subscriptions.push(TSDefintion)
+			context.subscriptions.push(JSDefintion)
+			context.subscriptions.push(TSDefintion)
 			vscode.window.onDidChangeActiveTextEditor(() => {
 				main.updatePage()
 			})
